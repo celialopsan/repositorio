@@ -1,0 +1,125 @@
+/**
+ *
+ * @author usuario
+ */
+ import java.util.Scanner;
+public class Memorion {
+
+    public static void ajustesyTablero() {
+        
+        Scanner lectorTeclado = new Scanner(System.in);
+        
+       int[][] tablero;
+       int filas;
+       int columnas;
+       String cadena;
+       char simbolo;
+       int errores;
+       int tiempo;
+       
+      
+        //Menu
+         
+        do{
+          
+          System.out.println("Introduce la letra 'a' para entrar al menu de ajustes");
+            cadena = lectorTeclado.next();
+            
+            simbolo = cadena.charAt(0);
+            
+            switch(simbolo)
+                {
+                case 'j'://Para jugar;
+                    
+                break;
+
+                case 'a'://Para entrar al menu de ajustes;
+                    
+                break;
+                                
+                case 'r'://Records tiempo por tamaño de tablero;
+                    
+                break;
+                                
+                case 's'://Para salir
+                break;
+
+
+                    default: System.out.println("Elige una opción válida");
+                }
+            //Ajustes del juego
+            if(simbolo == 'a')
+            {
+                System.out.println("Introduce el caracter 'f' para ajustar las filas,'c' para ajustar las columnas,"
+                + "'t' para ajustar el tiempo que se mostraran las parejas erroneas,'e' para ajustar los numeros de errores permitidos");
+        
+                switch(simbolo)
+                {//Tamaño de filas y columnas
+                case 'f':System.out.println("Cuantas filas tiene el tablero");
+                    filas=lectorTeclado.nextInt();
+                break;
+
+                case 'c':System.out.print("Cuantas columnas tiene el tablero");
+                    columnas=lectorTeclado.nextInt();
+                break;
+                            
+                //Tiempo que se muestra una pareja erronea    
+                case 't':System.out.print("Cuanto tiempo se mostraran las parejas erroneas");
+                    tiempo=lectorTeclado.nextInt();
+                break;
+                //Numero de errores permitidos        
+                case 'e':System.out.print("Numero de errores permitidos");
+                    errores=lectorTeclado.nextInt();
+                break;
+
+
+                    default: System.out.println("Elige una opción válida");
+                }
+            }
+        }
+        while(simbolo != 's');}
+        
+        
+        
+        
+        
+        
+        
+    public static int[][] cargartablero(int filas,int columnas) {
+             
+              Scanner lectorTeclado = new Scanner(System.in);
+        int[][] tablero;
+        
+        
+        //Bucle para crear la matriz (tablero)
+        tablero=new int[filas][columnas];
+        
+        for(filas=0;filas<tablero.length;filas++)
+        {
+            for(columnas=0;columnas<tablero[filas].length;columnas++)
+                {
+                    System.out.print(tablero[filas][columnas]);
+                }
+
+        }
+        return tablero;
+        
+  }
+    
+     public static void imprimirTablero() {
+        
+         // Mostrar el tablero
+        for (filas=0;filas<tablero.length;filas++) 
+        {
+            for (columnas=0;columnas<tablero[filas].length;columnas++) 
+                {
+                    System.out.print(tablero[filas][columnas]+" ");
+                }
+            System.out.println();
+        }
+    }
+        
+}
+    
+  
+    
