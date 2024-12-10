@@ -1,124 +1,254 @@
-/**
- *
- * @author usuario
- */
- import java.util.Scanner;
+import java.util.*;
+import java.io.*;
+
 public class Memorion {
+    // Variables globales
+    private static int filas = 4; // Tamaño del tablero
+    private static int columnas = 4;
+    private static int zoom = 1; // 1: 1 símbolo, 2: 4 símbolos, 3: 9 símbolos
+    private static int tiempoExposicion = 1000; // Tiempo en ms para mostrar cartas erróneas
+    private static boolean jugarContraIA = false; // ¿Jugar contra IA?
+    private static String dificultadIA = "fácil"; // Nivel de dificultad de la IA
 
-    public static void ajustesyTablero() {
-        
-        Scanner lectorTeclado = new Scanner(System.in);
-        
-       int[][] tablero;
-       int filas;
-       int columnas;
-       String cadena;
-       char simbolo;
-       int errores;
-       int tiempo;
-       
-      
-        //Menu
-         
-        do{
-          
-          System.out.println("Introduce la letra 'a' para entrar al menu de ajustes");
-            cadena = lectorTeclado.next();
-            
-            simbolo = cadena.charAt(0);
-            
-            switch(simbolo)
-                {
-                case 'j'://Para jugar;
-                    
-                break;
+    private static final String[] simbolos = {"$", "%", "/", "=", "¿", "^", "*", "@"};
+    private static final String ARCHIVO_RECORDS = "records.txt"; // Archivo para guardar tiempos
 
-                case 'a'://Para entrar al menu de ajustes;
-                    
-                break;
-                                
-                case 'r'://Records tiempo por tamaño de tablero;
-                    
-                break;
-                                
-                case 's'://Para salir
-                break;
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        char opcion;
 
+        do {
+            mostrarMenu();
+            System.out.print("Selecciona una opción: ");
+            opcion = sc.nextLine().toLowerCase().charAt(0);
 
-                    default: System.out.println("Elige una opción válida");
+            switch (opcion) {
+                case 'j': // Jugar
+                    jugar();
+                    break;
+                case 'a': // Configuraciones
+                    configurar(sc);
+                    break;
+                case 'r': // Ver récords
+                    verRecords();
+                    break;
+                case 's': // Salir
+                    System.out.println("¡Gracias por jugar!");
+                    break;
+                default:
+                    System.out.println("Opción no válida.");
+            }
+        } while (opcion != 's');
+    }
+
+    // Menú principal
+    private static void mostrarMenu() {
+        System.out.println("\n=== Menú Principal ===");
+        System.out.println("j - Jugar");
+        System.out.println("a - Ajustes");
+        System.out.println("r - Ver récords");
+        System.out.println("s - Salir");
+    }
+
+    // Configuraciones
+    private static void configurar(Scanner sc) {
+        char opcion;
+        do {
+            System.out.println("\n=== Menú de Ajustes ===");
+            System.out.println("1 - Cambiar tamaño del tablero");
+            System.out.println("2 - Cambiar zoom de las cartas");
+            System.out.println("3 - Cambiar nivel de IA");
+            System.out.println("4 - Cambiar tiempo de exposición");
+            System.out.println("5 - Volver al menú principal");
+            System.out.print("Selecciona una opción: ");
+            opcion = sc.nextLine().charAt(0);
+
+            switch (opcion) {
+                case '1': // Cambiar tamaño
+                    System.out.print("Introduce el número de filas: ");
+                    filas = sc.nextInt();
+                    System.out.print("Introduce el número de columnas: ");
+                    columnas = sc.nextInt();
+                    sc.nextLine(); // Limpiar el buffer
+                    break;
+                case '2': // Cambiar zoom
+                    System.out.println("1 - Zoom 1x (1 símbolo por carta)");
+                    System.out.println("2 - Zoom 2x (4 símbolos por carta)");
+                    System.out.println("3 - Zoom 3x (9 símbolos por carta)");
+                    System.out.print("Selecciona el nivel de zoom: ");
+                    zoom = sc.nextInt();
+                    sc.nextLine(); // Limpiar el buffer
+                    break;
+                case '3': // Cambiar nivel de IA
+                    System.out.println("1 - Sin IA");
+                    System.out.println("2 - IA fácil");
+                    System.out.println("3 - IA difícil");
+                    System.out.print("Selecciona el nivel de IA: ");
+                    int nivelIA = sc.nextInt();
+                    sc.nextLine(); // Limpiar el buffer
+                    if (nivelIA == 1) {
+                        jugarContraIA = false;
+                    } else {
+                        jugarContraIA = true;
+                        dificultadIA = (nivelIA == 2) ? "fácil" : "difícil";
+                    }
+                    break;
+                case '4': // Cambiar tiempo de exposición
+                    System.out.print("Introduce el tiempo de exposición (ms): ");
+                    tiempoExposicion = sc.nextInt();
+                    sc.nextLine(); // Limpiar el buffer
+                    break;
+                case '5': // Salir del menú de ajustes
+                    System.out.println("Volviendo al menú principal...");
+                    break;
+                default:
+                    System.out.println("Opción no válida.");
+            }
+        } while (opcion != '5');
+    }
+
+    // Juego principal
+    private static void jugar() {
+        // Crear tablero con cartas mezcladas
+        char[][] tablero = generarTablero();
+        boolean[][] descubiertas = new boolean[filas][columnas];
+
+        Scanner sc = new Scanner(System.in);
+        int movimientos = 0;
+        long inicio = System.currentTimeMillis();
+
+        while (!juegoTerminado(descubiertas)) {
+            mostrarTablero(tablero, descubiertas);
+            System.out.print("Introduce la primera carta (ejemplo: A1): ");
+            String primera = sc.nextLine().toUpperCase();
+            System.out.print("Introduce la segunda carta (ejemplo: B2): ");
+            String segunda = sc.nextLine().toUpperCase();
+
+            int[] carta1 = parsearCoordenada(primera);
+            int[] carta2 = parsearCoordenada(segunda);
+
+            if (carta1 == null || carta2 == null || !coordenadaValida(carta1) || !coordenadaValida(carta2)) {
+                System.out.println("Coordenadas inválidas. Intenta de nuevo.");
+                continue;
+            }
+
+            if (Arrays.equals(carta1, carta2)) {
+                System.out.println("No puedes seleccionar la misma carta dos veces.");
+                continue;
+            }
+
+            movimientos++;
+            mostrarCarta(tablero, descubiertas, carta1, true);
+            mostrarCarta(tablero, descubiertas, carta2, true);
+            mostrarTablero(tablero, descubiertas);
+
+            if (tablero[carta1[0]][carta1[1]] == tablero[carta2[0]][carta2[1]]) {
+                System.out.println("¡Pareja encontrada!");
+                descubiertas[carta1[0]][carta1[1]] = true;
+                descubiertas[carta2[0]][carta2[1]] = true;
+            } else {
+                System.out.println("No coinciden. Ocultando cartas...");
+                try {
+                    Thread.sleep(tiempoExposicion);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
-            //Ajustes del juego
-            if(simbolo == 'a')
-            {
-                System.out.println("Introduce el caracter 'f' para ajustar las filas,'c' para ajustar las columnas,"
-                + "'t' para ajustar el tiempo que se mostraran las parejas erroneas,'e' para ajustar los numeros de errores permitidos");
-        
-                switch(simbolo)
-                {//Tamaño de filas y columnas
-                case 'f':System.out.println("Cuantas filas tiene el tablero");
-                    filas=lectorTeclado.nextInt();
-                break;
-
-                case 'c':System.out.print("Cuantas columnas tiene el tablero");
-                    columnas=lectorTeclado.nextInt();
-                break;
-                            
-                //Tiempo que se muestra una pareja erronea    
-                case 't':System.out.print("Cuanto tiempo se mostraran las parejas erroneas");
-                    tiempo=lectorTeclado.nextInt();
-                break;
-                //Numero de errores permitidos        
-                case 'e':System.out.print("Numero de errores permitidos");
-                    errores=lectorTeclado.nextInt();
-                break;
-
-
-                    default: System.out.println("Elige una opción válida");
-                }
+                mostrarCarta(tablero, descubiertas, carta1, false);
+                mostrarCarta(tablero, descubiertas, carta2, false);
             }
         }
-        while(simbolo != 's');}
-        
-        
-        
-        
-        
-        
-        
-    public static int[][] cargartablero(int filas,int columnas) {
-             
-              Scanner lectorTeclado = new Scanner(System.in);
-        int[][] tablero;
-        
-        
-        //Bucle para crear la matriz (tablero)
-        tablero=new int[filas][columnas];
-        
-        for(filas=0;filas<tablero.length;filas++)
-        {
-            for(columnas=0;columnas<tablero[filas].length;columnas++)
-                {
-                    System.out.print(tablero[filas][columnas]);
-                }
 
+        long tiempoTotal = (System.currentTimeMillis() - inicio) / 1000;
+        System.out.println("¡Juego terminado en " + movimientos + " movimientos y " + tiempoTotal + " segundos!");
+        guardarRecord(tiempoTotal);
+    }
+
+    // Métodos auxiliares para el tablero
+    private static char[][] generarTablero() {
+        List<Character> cartas = new ArrayList<>();
+        for (int i = 0; i < (filas * columnas) / 2; i++) {
+            cartas.add(simbolos[i % simbolos.length].charAt(0));
+            cartas.add(simbolos[i % simbolos.length].charAt(0));
+        }
+        Collections.shuffle(cartas);
+
+        char[][] tablero = new char[filas][columnas];
+        Iterator<Character> it = cartas.iterator();
+        for (int i = 0; i < filas; i++) {
+            for (int j = 0; j < columnas; j++) {
+                tablero[i][j] = it.next();
+            }
         }
         return tablero;
-        
-  }
-    
-     public static void imprimirTablero() {
-        
-         // Mostrar el tablero
-        for (filas=0;filas<tablero.length;filas++) 
-        {
-            for (columnas=0;columnas<tablero[filas].length;columnas++) 
-                {
-                    System.out.print(tablero[filas][columnas]+" ");
+    }
+
+    private static void mostrarTablero(char[][] tablero, boolean[][] descubiertas) {
+        System.out.print("  ");
+        for (int j = 0; j < columnas; j++) {
+            System.out.print((char) ('A' + j) + " ");
+        }
+        System.out.println();
+
+        for (int i = 0; i < filas; i++) {
+            System.out.print((i + 1) + " ");
+            for (int j = 0; j < columnas; j++) {
+                if (descubiertas[i][j]) {
+                    System.out.print(tablero[i][j] + " ");
+                } else {
+                    System.out.print("* ");
                 }
+            }
             System.out.println();
         }
     }
-        
+
+    private static void mostrarCarta(char[][] tablero, boolean[][] descubiertas, int[] coord, boolean mostrar) {
+        descubiertas[coord[0]][coord[1]] = mostrar;
+    }
+
+    private static boolean juegoTerminado(boolean[][] descubiertas) {
+        for (boolean[] fila : descubiertas) {
+            for (boolean celda : fila) {
+                if (!celda) return false;
+            }
+        }
+        return true;
+    }
+
+    private static int[] parsearCoordenada(String coord) {
+        if (coord.length() < 2) return null;
+        char letra = coord.charAt(0);
+        char numero = coord.charAt(1);
+
+        int fila = Character.getNumericValue(numero) - 1;
+        int columna = letra - 'A';
+        return new int[]{fila, columna};
+    }
+
+    private static boolean coordenadaValida(int[] coord) {
+        return coord[0] >= 0 && coord[0] < filas && coord[1] >= 0 && coord[1] < columnas;
+    }
+
+    // Gestión de récords
+    private static void guardarRecord(long tiempo) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(ARCHIVO_RECORDS, true))) {
+            writer.write(filas + "x" + columnas + ": " + tiempo + " segundos\n");
+        } catch (IOException e) {
+            System.out.println("Error al guardar el récord.");
+        }
+    }
+
+    private static void verRecords() {
+        try (BufferedReader reader = new BufferedReader(new FileReader(ARCHIVO_RECORDS))) {
+            String linea;
+            System.out.println("\n=== Récords de Tiempo ===");
+            while ((linea = reader.readLine()) != null) {
+                System.out.println(linea);
+            }
+        } catch (IOException e) {
+            System.out.println("No hay récords registrados.");
+        }
+    }
 }
     
   
